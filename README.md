@@ -4,6 +4,35 @@ This project provides an introduction to Graph Neural Networks (GNNs) using PyTo
 
 ## Installation
 
+### Option 1: Using UV (Recommended - Much Faster!)
+
+[UV](https://github.com/astral-sh/uv) is an extremely fast Python package installer (10-100x faster than pip).
+
+**Install UV on Windows:**
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**Then install dependencies:**
+
+```powershell
+# Create and activate virtual environment
+uv venv
+.\.venv\Scripts\Activate.ps1
+
+# Install all dependencies from pyproject.toml
+uv sync
+
+# Or install with GPU support (CUDA 11.8)
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+uv pip install -e .
+```
+
+See [README_UV.md](README_UV.md) for detailed UV usage instructions.
+
+### Option 2: Using pip (Traditional Method)
+
 To run this project, you need to install the required Python packages. You can install them using pip:
 
 ```bash
@@ -27,6 +56,9 @@ To run this project, you need to install the required Python packages. You can i
 
 # Then, install the other required packages:
 pip install hydra-core omegaconf wandb pytorch-lightning numpy tqdm
+
+# Or install from pyproject.toml:
+pip install -e .
 ```
 
 ## How to Run
@@ -48,11 +80,12 @@ python src/run.py model=gcn
 The configuration files are located in the `configs/` directory.
 
 ## Improving the predictive accuracy
+
 There are many ways to improve the GNN. Please try to get the validation error (MSE) as low as possible. I have not implemented the code to run on the test data. That is for you to do, but please wait until you have the final model.
 Here are some great resources:
+
 - Try different GNN architectures and layers see (https://pytorch-geometric.readthedocs.io/en/latest/modules/nn.html)
 - Try different optimizers and schedulers
 - Tune hyperparameters (especially learning rate, layers, and hidden units)
 - Use advanced regularization techniques such as https://openreview.net/forum?id=xkljKdGe4E#discussion
 - You can try changing the generated features of the dataloader
-
