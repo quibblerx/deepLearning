@@ -6,6 +6,7 @@ method: semi-supervised-ensemble
 train:
   total_epochs: 250
   validation_interval: 10
+  early_stopping_patience: 10
 
 init:
   _target_: trainer.SemiSupervisedEnsemble
@@ -14,7 +15,7 @@ init:
   optimizer:
     _target_: torch.optim.AdamW
     _partial_: true
-    lr: 0.001
+    lr: 0.0005
     weight_decay: 0.005
   scheduler:
     # _target_: torch.optim.lr_scheduler.StepLR
@@ -31,3 +32,8 @@ init:
   consistency_weight: 50.0 # Maximum weight for consistency loss
   consistency_rampup_epochs: 125 # Number of epochs to ramp up from 0 to max weight
   ema_decay: 0.99 # Exponential moving average decay rate for teacher model
+  grad_clip_norm: 0.0
+  use_target_normalization: true
+  epoch_mode: labeled
+  mt_augment_mode: none
+  mt_augment_strength: 0.05
