@@ -90,49 +90,54 @@ class QM9DataModule(pl.LightningDataModule):
         print(f"Batch sizes: labeled={self.batch_size_train_labeled}, unlabeled={self.batch_size_train_unlabeled}")
 
     def train_dataloader(self, shuffle=True) -> DataLoader:
+        persistent_workers = self.num_workers > 0
         return DataLoader(
             self.data_train_labeled,
             batch_size=self.batch_size_train_labeled,
             num_workers=self.num_workers,
             shuffle=shuffle,
             pin_memory=True,
-            persistent_workers=True
+            persistent_workers=persistent_workers
         )
 
     def unsupervised_train_dataloader(self, shuffle=True) -> DataLoader:
+        persistent_workers = self.num_workers > 0
         return DataLoader(
             self.data_train_unlabeled,
             batch_size=self.batch_size_train_unlabeled,
             num_workers=self.num_workers,
             shuffle=shuffle,
             pin_memory=True,
-            persistent_workers=True
+            persistent_workers=persistent_workers
         )
 
 
     def val_dataloader(self) -> DataLoader:
+        persistent_workers = self.num_workers > 0
         return DataLoader(
             self.data_val,
             batch_size=self.batch_size_inference,
             num_workers=self.num_workers,
             shuffle=False,
             pin_memory=True,
-            persistent_workers=True
+            persistent_workers=persistent_workers
         )
 
 
     def test_dataloader(self) -> DataLoader:
+        persistent_workers = self.num_workers > 0
         return DataLoader(
             self.data_test,
             batch_size=self.batch_size_inference,
             num_workers=self.num_workers,
             shuffle=False,
             pin_memory=True,
-            persistent_workers=True
+            persistent_workers=persistent_workers
         )
 
 
     def ood_dataloaders(self) -> dict[str, DataLoader]:
+        persistent_workers = self.num_workers > 0
         return {
             dataset_name: DataLoader(
                 dataset,
@@ -140,7 +145,7 @@ class QM9DataModule(pl.LightningDataModule):
                 num_workers=self.num_workers,
                 shuffle=False,
                 pin_memory=True,
-                persistent_workers=True
+                persistent_workers=persistent_workers
             )
             for dataset_name, dataset in self.ood_datasets.items()
         }
@@ -154,13 +159,14 @@ class QM9DataModule(pl.LightningDataModule):
             ood_names = []
             #for dm in self.ood_datasets:
             for dataset_name, dataset in self.ood_datasets.items():
+                persistent_workers = self.num_workers > 0
                 val_dataloader = DataLoader(
                     dataset,
                     batch_size=self.batch_size_inference,
                     num_workers=self.num_workers,
                     shuffle=False,
                     pin_memory=True,
-                    persistent_workers=True
+                    persistent_workers=persistent_workers
                 )
                 ood_dataloaders.append(val_dataloader)
                 ood_names.append(dataset_name)

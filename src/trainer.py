@@ -1,4 +1,3 @@
-from functools import partial
 from copy import deepcopy
 
 import numpy as np
@@ -25,10 +24,11 @@ class SemiSupervisedEnsemble:
         
         # Create teacher models (EMA of student models)
         self.teacher_models = [deepcopy(model).to(device) for model in self.models]
-        # Initialize teacher with same weights as student
+        # Initialize teacher with same weights as student and freeze it.
         for teacher in self.teacher_models:
+            teacher.eval()
             for param in teacher.parameters():
-                param.detach_()  # Don't compute gradients for teacher
+                param.requires_grad_(False)
 
         # Semi-supervised hyperparameters
         self.consistency_weight = consistency_weight
@@ -50,14 +50,16 @@ class SemiSupervisedEnsemble:
         # Logging
         self.logger = logger
 
+    @torch.no_grad()
     def update_ema_variables(self):
         """Update teacher model parameters using exponential moving average of student parameters"""
         for teacher_model, student_model in zip(self.teacher_models, self.models):
             for teacher_param, student_param in zip(teacher_model.parameters(), student_model.parameters()):
-                teacher_param.data = (
-                    self.ema_decay * teacher_param.data + 
-                    (1.0 - self.ema_decay) * student_param.data
-                )
+                teacher_param.mul_(self.ema_decay).add_(student_param, alpha=1.0 - self.ema_decay)
+
+            # Keep batch-norm state aligned with the student.
+            for teacher_buffer, student_buffer in zip(teacher_model.buffers(), student_model.buffers()):
+                teacher_buffer.copy_(student_buffer)
 
     def get_current_consistency_weight(self, epoch):
         """Ramp up consistency loss weight from 0 to max over rampup_epochs"""
@@ -68,47 +70,38 @@ class SemiSupervisedEnsemble:
         else:
             return self.consistency_weight
 
-    def validate(self):
-        # Use teacher models for validation (typically more stable)
+    def _evaluate(self, dataloader):
+        total_squared_error = 0.0
+        total_absolute_error = 0.0
+        total_examples = 0
+
         for model in self.teacher_models:
             model.eval()
 
-        val_losses = []
-        
         with torch.no_grad():
-            for x, targets in self.val_dataloader:
+            for x, targets in dataloader:
                 x, targets = x.to(self.device), targets.to(self.device)
-                
+
                 # Ensemble prediction using teacher models
                 preds = [model(x) for model in self.teacher_models]
                 avg_preds = torch.stack(preds).mean(0)
-                
-                val_loss = F.mse_loss(avg_preds, targets)
-                val_losses.append(val_loss.item())
-        val_loss = np.mean(val_losses)
-        return {"val_MSE": val_loss}
+
+                diff = avg_preds - targets
+                total_squared_error += diff.pow(2).sum().item()
+                total_absolute_error += diff.abs().sum().item()
+                total_examples += diff.numel()
+
+        mse = total_squared_error / total_examples
+        mae = total_absolute_error / total_examples
+        return mse, mae
+
+    def validate(self):
+        val_mse, val_mae = self._evaluate(self.val_dataloader)
+        return {"val_MSE": val_mse, "val_MAE": val_mae}
 
     def test(self):
         """Evaluate on test set"""
-        # Use teacher models for testing (typically more stable)
-        for model in self.teacher_models:
-            model.eval()
-
-        test_losses = []
-        
-        with torch.no_grad():
-            for x, targets in self.test_dataloader:
-                x, targets = x.to(self.device), targets.to(self.device)
-                
-                # Ensemble prediction using teacher models
-                preds = [model(x) for model in self.teacher_models]
-                avg_preds = torch.stack(preds).mean(0)
-                
-                test_loss = F.mse_loss(avg_preds, targets)
-                test_losses.append(test_loss.item())
-        
-        test_mse = np.mean(test_losses)
-        test_mae = np.sqrt(test_mse)  # Approximation, should calculate properly
+        test_mse, test_mae = self._evaluate(self.test_dataloader)
         return {"test_MSE": test_mse, "test_MAE": test_mae}
 
     def train(self, total_epochs, validation_interval):
@@ -116,8 +109,6 @@ class SemiSupervisedEnsemble:
             # Set models to training mode
             for model in self.models:
                 model.train()
-            for model in self.teacher_models:
-                model.train()  # Keep dropout active but no gradient computation
             
             supervised_losses_logged = []
             consistency_losses_logged = []

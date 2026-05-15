@@ -50,4 +50,4 @@ class GCN(torch.nn.Module):
         # Final prediction
         x = self.linear(x)
 
-        return x
+        return x.squeeze(-1)

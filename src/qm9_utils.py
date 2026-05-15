@@ -18,11 +18,11 @@ from torch_geometric.transforms import BaseTransform
 
 class GetTarget(BaseTransform):
     def __init__(self, target: int | None = None) -> None:
-        self.target = [target]
+        self.target = target
 
     def forward(self, data: Data) -> Data:
         if self.target is not None:
-            data.y = data.y[:, self.target]
+            data.y = data.y[:, self.target].view(-1)
         return data
 
 class Collater:

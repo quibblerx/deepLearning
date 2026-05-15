@@ -3,7 +3,7 @@ defaults:
 
 _target_: logger.WandBLogger
 group: ${dataset.dataset_name} # Name of the group for wandb
-name: ${model.name}_seed=${seed} # Name of the run for wandb
+name: ${model.name}_seed=${seed}_${now:%Y%m%d_%H%M%S} # Unique run name for wandb
 job_type: test
 entity: deep-learning-dtu
 project_name: semi-supervised-ensembles
