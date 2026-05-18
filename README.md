@@ -1,91 +1,63 @@
-# GNN Introduction
+# Semi-Supervised Learning for Drug Discovery
 
-This project provides an introduction to Graph Neural Networks (GNNs) using PyTorch and PyTorch Geometric on the dataset QM9.
+This project studies graph neural networks for molecular property prediction on QM9, with a focus on semi-supervised learning. We compare a supervised GCN baseline against Mean Teacher and a regression-friendly peer-consistency variant, using labeled and unlabeled molecular graphs.
+
+## What’s Included
+
+- Supervised GCN baseline for QM9 regression
+- Mean Teacher semi-supervised learning
+- Peer consistency on unlabeled graphs
+- Low-label stress tests
+- Reproducible experiment notebook
+
+## Tech Stack
+
+- Python
+- PyTorch
+- PyTorch Geometric
+- Hydra
+- Weights & Biases
+- NumPy / tqdm
 
 ## Installation
 
-### Option 1: Using UV (Recommended - Much Faster!)
-
-[UV](https://github.com/astral-sh/uv) is an extremely fast Python package installer (10-100x faster than pip).
-
-**Install UV on Windows:**
-
-```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-**Then install dependencies:**
-
-```powershell
-# Create and activate virtual environment
-uv venv
-.\.venv\Scripts\Activate.ps1
-
-# Install all dependencies from pyproject.toml
-uv sync
-
-# Or install with GPU support (CUDA 11.8)
-uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-uv pip install -e .
-```
-
-See [README_UV.md](README_UV.md) for detailed UV usage instructions.
-
-### Option 2: Using pip (Traditional Method)
-
-To run this project, you need to install the required Python packages. You can install them using pip:
+The recommended workflow uses `uv`.
 
 ```bash
-# It is recommended to install PyTorch first, following the official instructions
-# for your specific hardware (CPU or GPU with a specific CUDA version).
-# See: https://pytorch.org/get-started/locally/
-
-# For example, for a recent CUDA version:
-# pip install torch torchvision torchaudio
-
-# Or for CPU only:
-# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-
-# After installing PyTorch, install PyTorch Geometric.
-# The exact command depends on your PyTorch and CUDA versions.
-# Please refer to the PyTorch Geometric installation guide:
-# https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html
-
-# Example for PyTorch 2.7 and CUDA 11.8
-# pip install torch_geometric
-
-# Then, install the other required packages:
-pip install hydra-core omegaconf wandb pytorch-lightning numpy tqdm
-
-# Or install from pyproject.toml:
-pip install -e .
+uv venv
+source .venv/bin/activate
+uv sync
 ```
 
-## How to Run
+If you need a GPU-enabled PyTorch build, install it first using the official PyTorch instructions for your CUDA version, then run `uv sync` or `uv pip install -e .`.
 
-The main entry point for this project is `src/run.py`. It uses `hydra` for configuration management. Hydra is a broadly used and highly respected so I recommend using it. You can find a guide to it here https://medium.com/@jennytan5522/introduction-to-hydra-configuration-for-python-646e1dd4d1e9.
+## Running Training
 
-To run the code, execute the following command from the root of the project:
+Run the main training entry point from the project root:
 
 ```bash
 python src/run.py
 ```
 
-You can override the default configuration by passing arguments from the command line. For example, to use a different model configuration:
+Hydra config overrides can be passed on the command line:
 
 ```bash
-python src/run.py model=gcn
+python src/run.py model=gcn trainer.init.consistency_weight=1
 ```
 
-The configuration files are located in the `configs/` directory.
+## Reproducing Results
 
-## Improving the predictive accuracy
+Open `run.ipynb` to reproduce the final experiments used in the report.
+The notebook includes:
 
-There are many ways to improve the GNN. Please try to get the validation error (MSE) as low as possible. I have not implemented the code to run on the test data. That is for you to do, but please wait until you have the final model.
-Here are some great resources:
+- environment setup
+- W&B login
+- main-split runs
+- low-label runs
+- ablation runs
 
-- Try different GNN architectures and layers see (https://pytorch-geometric.readthedocs.io/en/latest/modules/nn.html)
-- Try different optimizers and schedulers
-- Tune hyperparameters (especially learning rate, layers, and hidden units)
-- Use advanced regularization techniques such as https://openreview.net/forum?id=xkljKdGe4E#discussion
-- You can try changing the generated features of the dataloader
+## Project Structure
+
+- `src/` - training, data, model, and logging code
+- `configs/` - Hydra configs
+- `run.ipynb` - reproduction notebook
